@@ -1,0 +1,53 @@
+name: Configure .npmrc file
+
+description: Configures a .npmrc file for a specific scope and registry, supporting both public and private packages.
+
+author: Rajpal Singh
+
+branding:
+  icon: file-minus
+  color: purple
+
+inputs:
+  scope:
+    description: "Scope (e.g. @myorg)"
+    required: true
+  registry:
+    description: "Registry URL"
+    required: false
+    default: https://npm.pkg.github.com/
+  authToken:
+    description: "Authentication token for private registry"
+    required: true
+  directory:
+    description: "Directory where .npmrc will be created"
+    required: false
+    default: ./
+  registryAuthUrl:
+    description: "Registry Auth URL (without protocol, used for auth)"
+    required: false
+    default: //npm.pkg.github.com/
+  public:
+    description: "Whether the registry is public"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create .npmrc file
+      shell: bash
+      run: |
+        CONFIG_PATH="${{ inputs.directory }}/.npmrc"
+        echo "Writing .npmrc to $CONFIG_PATH"
+        echo "${{ inputs.scope }}:registry=${{ inputs.registry }}" > "$CONFIG_PATH"
+
+        if [ "${{ inputs.public }}" != "true" ] && [ -n "${{ inputs.authToken }}" ]; then
+          echo "${{ inputs.registryAuthUrl }}:_authToken=${{ inputs.authToken }}" >> "$CONFIG_PATH"
+        fi
+
+        echo "NPM config file created:"
+        # cat "$CONFIG_PATH"
+
+        echo "npmrc-config-file=$CONFIG_PATH" >> $GITHUB_ENV
+        echo "npmrc-config-file-absolute-path=${{ github.workspace }}/$CONFIG_PATH" >> $GITHUB_ENV
